@@ -1,0 +1,37 @@
+1. Prohibited Content
+Content that is never allowed in ads, assets, or destinations (websites/apps). No exceptions.
+i)Counterfeit goods — Sale or promotion of fake items mimicking genuine brands (identical/substantially indistinguishable trademarks/logos).
+ii)Dangerous products or services — Items/services causing harm/injury, e.g., recreational drugs (chemical/herbal), psychoactive substances, drug paraphernalia, weapons/ammunition/explosives/fireworks, instructions for making harmful products, tobacco products.
+iii)Enabling dishonest behavior — Tools/services facilitating fraud/dishonesty, e.g., hacking software/instructions, fake traffic inflation, fake documents, academic cheating services.
+iv)Inappropriate content — Shocking material or promotion of hatred/intolerance/discrimination/violence (real, fictional, AI-generated, etc.), e.g., bullying, racial discrimination, hate group promotion, graphic crime/accident images, animal cruelty, murder, self-harm, extortion, endangered species trade, profane language, sexual exploitation of minors, graphic sexual acts.
+
+2. Prohibited Practices
+Actions/behaviors that are never allowed when advertising on Google.
+i)Abusing the ad network — Tricking/circumventing review systems, e.g., malware promotion, cloaking (hiding true destination), arbitrage (ads solely to show more ads), bridge/gateway pages, social endorsement gaming, policy manipulation.
+ii)Data collection and use — Misusing or irresponsibly collecting/handling user data without proper disclosures/security, especially sensitive info (name, email, address, phone, IDs, financial/political/sexual/racial/religious details). Violations of personalized ads/remarketing policies.
+iii)Misrepresentation — Deceptive ads/destinations, e.g., hiding billing/charges/fees, unrealistic claims (weight loss/financial gain), unavailable offers, false donation collection, phishing, omitting required info (tax/license/contact/address).
+
+3. Restricted Content and Features
+Content/features that are allowed only under specific conditions, often requiring certification, geographic targeting limits, age-gating, disclosures, responsible gambling info, or compliance with local laws. Many trigger "Eligible (limited)" status or limited ad serving.
+
+i)Ad protections for children and teens — Disables personalization, restricts sensitive categories; complies with laws for under-18 users (links to alcohol/gambling/high fat/sugar/salt food rules).
+ii)Sexual content — Limited allowance (no minors targeting); e.g., visible genitalia/breasts, hook-up dating, sex toys, strip clubs, suggestive chat/poses — shown only in specific query/age/law-based scenarios.
+iii)Alcohol — Allowed in permitted countries, no minors targeting; e.g., beer, wine, spirits, non-alcoholic variants.
+iv)Copyrights — No unauthorized use; certification required for authorized distribution/capture/access.
+v)Gambling and games — Certification + responsible gambling info required in approved countries, no minors; e.g., casinos, sports betting, lotteries, poker-for-fun, odds sites.
+vi)Healthcare and medicines — Certification + approved locations; e.g., clinical trials, HIV tests, addiction services, prescription drugs.
+v)Political content — Complies with election/campaign laws (including silence periods); e.g., party/candidate promotion, issue advocacy.
+vi)Financial products and services — Disclosures + local compliance; e.g., loans, credit repair, investments, cryptocurrencies (some require certification like exchanges/wallets; others like mining hardware/NFT games may not).
+vii)Trademarks — Restricted if valid complaint from owner (case-by-case review).
+viii)Other restricted businesses — Limits on high-risk/exploitative businesses (e.g., certain government documents/services require certification).
+ix)Restricted ad formats and features — Access limited until certification/requirements met.
+x)Limited ad serving — Impression caps on higher-abuse-potential ads; only qualified advertisers get full access.
+xi)Legal requirements — Must follow all local laws/regulations in targeted areas (plus trade sanctions, e.g., no targeting embargoed regions like Crimea, Cuba, Iran, North Korea; no use by/on behalf of sanctioned entities). Violations can be egregious → suspension.
+
+4. Editorial and Technical Requirements
+High standards for quality, professionalism, clarity, and functionality (warnings often issued before stricter enforcement).
+
+i)Editorial — Ads/assets/destinations must be clear, professional, relevant, useful, easy to interact with. No gimmicky elements (e.g., excessive "FREE!!", repetition, non-standard spelling/punctuation/symbols/spacing/capitalization, vague phrases, unidentified businesses, phone numbers in text, misuse of features).
+ii)Destination requirements — Functional, navigable sites/apps with unique value; no under-construction pages, inaccurate display URLs, disabled back buttons, non-browser-compatible content.
+iii)Technical requirements — Clear/functional ads (e.g., no exceeding limits, supported languages, working HTML5).
+iv)Ad format requirements — Specific limits per format (character counts, image sizes/ratios, file sizes, video lengths); no non-family-safe content in image/video/non-text formats.
