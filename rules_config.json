@@ -1,0 +1,13 @@
+{
+    "MAX_CHARS": 90,
+    "BANNED_WORDS": [
+        "guarantee",
+        "free money",
+        "risk-free",
+        "100%",
+        "lottery",
+        "instant wealth"
+    ],
+    "MAX_CAPS_RATIO": 0.5,
+    "REQUIRE_BUSINESS_NAME": true
+}
