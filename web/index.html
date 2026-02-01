@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AdChecker - AI Ad Compliance Analyzer</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 20px;
+        }
+        .form-control, .form-select {
+            border-radius: 10px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 12px 30px;
+            font-weight: 600;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        .result-card {
+            margin-top: 10px;
+            border-left: 4px solid #667eea;
+        }
+        .result-card.pass {
+            border-left-color: #28a745;
+        }
+        .result-card.fail {
+            border-left-color: #dc3545;
+        }
+        .status-badge {
+            font-size: 0.9rem;
+            padding: 5px 15px;
+            border-radius: 20px;
+        }
+        .status-pass {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-fail {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .spinner-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        .image-preview {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+        .step-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+        .step-icon.pass { background-color: #d4edda; color: #155724; }
+        .step-icon.fail { background-color: #f8d7da; color: #721c24; }
+        .step-icon.pending { background-color: #e2e3e5; color: #383d41; }
+        textarea {
+            font-family: 'Consolas', monospace;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" class="spinner-overlay" style="display: none;">
+        <div class="text-center text-white">
+            <div class="spinner-border" style="width: 3rem; height: 3rem;" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <h4 class="mt-3">Analyzing your ad with AI...</h4>
+            <p>This may take a few seconds</p>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <!-- Header -->
+        <div class="text-center text-white mb-4">
+            <h1><i class="bi bi-shield-check"></i> AdChecker</h1>
+            <p class="lead">AI-Powered Google Ads Compliance Analyzer</p>
+        </div>
+
+        <div class="row">
+            <!-- Left Column: Input Form -->
+            <div class="col-lg-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-pencil-square"></i> Ad Input</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="adForm">
+                            <!-- Ad Text -->
+                            <div class="mb-3">
+                                <label for="adText" class="form-label fw-bold">
+                                    <i class="bi bi-chat-quote"></i> Ad Copy Text *
+                                </label>
+                                <textarea class="form-control" id="adText" rows="3" 
+                                    placeholder="Enter your ad copy here..." required></textarea>
+                                <small class="text-muted">Character count: <span id="charCount">0</span></small>
+                            </div>
+
+                            <!-- Image Upload -->
+                            <div class="mb-3">
+                                <label for="adImage" class="form-label fw-bold">
+                                    <i class="bi bi-image"></i> Ad Image (Optional)
+                                </label>
+                                <input type="file" class="form-control" id="adImage" 
+                                    accept="image/jpeg,image/png,image/gif,image/webp">
+                                <img id="imagePreview" class="image-preview" style="display: none;">
+                            </div>
+
+                            <hr>
+
+                            <!-- Business Info -->
+                            <div class="mb-3">
+                                <label for="businessInfo" class="form-label fw-bold">
+                                    <i class="bi bi-building"></i> Business Info
+                                </label>
+                                <textarea class="form-control" id="businessInfo" rows="4"></textarea>
+                            </div>
+
+                            <!-- Collapsible Advanced Options -->
+                            <div class="accordion mb-3" id="advancedOptions">
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" 
+                                            data-bs-toggle="collapse" data-bs-target="#collapseAdvanced">
+                                            <i class="bi bi-gear me-2"></i> Advanced Options
+                                        </button>
+                                    </h2>
+                                    <div id="collapseAdvanced" class="accordion-collapse collapse">
+                                        <div class="accordion-body">
+                                            <!-- Guidelines -->
+                                            <div class="mb-3">
+                                                <label for="guidelines" class="form-label">
+                                                    <i class="bi bi-list-check"></i> Compliance Guidelines
+                                                </label>
+                                                <textarea class="form-control" id="guidelines" rows="5"></textarea>
+                                            </div>
+
+                                            <!-- Recommendations -->
+                                            <div class="mb-3">
+                                                <label for="recommendations" class="form-label">
+                                                    <i class="bi bi-lightbulb"></i> Marketing Recommendations
+                                                </label>
+                                                <textarea class="form-control" id="recommendations" rows="4"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="bi bi-robot"></i> Analyze Ad
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Results -->
+            <div class="col-lg-6 mb-4">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-clipboard-data"></i> Analysis Results</h5>
+                        <span id="overallStatus" class="status-badge" style="display: none;"></span>
+                    </div>
+                    <div class="card-body" id="resultsContainer">
+                        <div class="text-center text-muted py-5">
+                            <i class="bi bi-arrow-left-circle" style="font-size: 3rem;"></i>
+                            <p class="mt-3">Enter your ad details and click "Analyze Ad" to see results</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center text-white-50 mt-3">
+            <small>Powered by Google Gemini AI | AdChecker v1.0</small>
+        </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            // Load default values on page load
+            loadDefaults();
+
+            // Character count for ad text
+            $('#adText').on('input', function() {
+                $('#charCount').text($(this).val().length);
+            });
+
+            // Image preview
+            $('#adImage').on('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        $('#imagePreview').attr('src', e.target.result).show();
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    $('#imagePreview').hide();
+                }
+            });
+
+            // Form submission
+            $('#adForm').on('submit', function(e) {
+                e.preventDefault();
+                analyzeAd();
+            });
+        });
+
+        function loadDefaults() {
+            $.get('/api/defaults', function(data) {
+                $('#businessInfo').val(data.business_info);
+                $('#guidelines').val(data.guidelines);
+                $('#recommendations').val(data.recommendations);
+            }).fail(function() {
+                console.log('Could not load defaults');
+            });
+        }
+
+        function analyzeAd() {
+            // Show loading spinner
+            $('#loadingSpinner').show();
+            $('#resultsContainer').html('<div class="text-center py-5"><div class="spinner-border text-primary"></div></div>');
+            $('#overallStatus').hide();
+
+            // Prepare form data
+            const formData = new FormData();
+            formData.append('ad_text', $('#adText').val());
+            formData.append('business_info', $('#businessInfo').val());
+            formData.append('guidelines', $('#guidelines').val());
+            formData.append('recommendations', $('#recommendations').val());
+
+            const imageFile = $('#adImage')[0].files[0];
+            if (imageFile) {
+                formData.append('image', imageFile);
+            }
+
+            // Send API request
+            $.ajax({
+                url: '/api/analyze',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    displayResults(response);
+                },
+                error: function(xhr, status, error) {
+                    displayError(xhr.responseJSON || { message: error });
+                },
+                complete: function() {
+                    $('#loadingSpinner').hide();
+                }
+            });
+        }
+
+        function displayResults(data) {
+            let html = '';
+            
+            // Overall status badge
+            const overallStatus = data.overall_status || 'UNKNOWN';
+            const statusClass = overallStatus === 'PASS' ? 'status-pass' : 'status-fail';
+            $('#overallStatus').removeClass('status-pass status-fail')
+                .addClass(statusClass)
+                .text(overallStatus)
+                .show();
+
+            // Display message if any
+            if (data.message) {
+                html += `<div class="alert alert-warning"><i class="bi bi-exclamation-triangle"></i> ${data.message}</div>`;
+            }
+
+            // Display image info if any
+            if (data.has_image && data.image_filename) {
+                html += `<div class="alert alert-info"><i class="bi bi-image"></i> Image analyzed: ${data.image_filename}</div>`;
+            }
+
+            // Display each step
+            data.steps.forEach((step, index) => {
+                const stepStatus = step.status || step.compliance_status || 'N/A';
+                const statusClass = stepStatus === 'PASS' ? 'pass' : (stepStatus === 'FAIL' ? 'fail' : 'pending');
+                
+                html += `
+                    <div class="card result-card ${statusClass} mb-3">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="step-icon ${statusClass}">${index + 1}</div>
+                                <h6 class="mb-0">${step.step}</h6>
+                                <span class="ms-auto badge bg-${statusClass === 'pass' ? 'success' : (statusClass === 'fail' ? 'danger' : 'secondary')}">${stepStatus}</span>
+                            </div>
+                            ${renderStepContent(step)}
+                        </div>
+                    </div>
+                `;
+            });
+
+            $('#resultsContainer').html(html);
+        }
+
+        function renderStepContent(step) {
+            let content = '';
+            
+            // Handle different step types
+            if (step.violations && step.violations.length > 0) {
+                content += '<div class="mt-2"><strong>Violations:</strong><ul class="text-danger">';
+                step.violations.forEach(v => content += `<li>${v}</li>`);
+                content += '</ul></div>';
+            }
+
+            if (step.issues && step.issues.length > 0) {
+                content += '<div class="mt-2"><strong>Issues:</strong><ul class="text-warning">';
+                step.issues.forEach(i => content += `<li>${i}</li>`);
+                content += '</ul></div>';
+            }
+
+            if (step.image_issues && step.image_issues.length > 0) {
+                content += '<div class="mt-2"><strong>Image Issues:</strong><ul class="text-warning">';
+                step.image_issues.forEach(i => content += `<li>${i}</li>`);
+                content += '</ul></div>';
+            }
+
+            if (step.suggestions && step.suggestions.length > 0) {
+                content += '<div class="mt-2"><strong>Suggestions:</strong><ul class="text-success">';
+                step.suggestions.forEach(s => content += `<li>${s}</li>`);
+                content += '</ul></div>';
+            }
+
+            if (step.image_description) {
+                content += `<div class="mt-2"><strong>Image Description:</strong> ${step.image_description}</div>`;
+            }
+
+            if (step.text_image_alignment && step.text_image_alignment.length > 0) {
+                content += '<div class="mt-2"><strong>Text-Image Alignment:</strong><ul>';
+                step.text_image_alignment.forEach(t => content += `<li>${t}</li>`);
+                content += '</ul></div>';
+            }
+
+            if (step.improvement_score) {
+                content += `<div class="mt-2"><strong>Improvement Score:</strong> <span class="badge bg-primary">${step.improvement_score}/10</span></div>`;
+            }
+
+            if (step.missing_elements && step.missing_elements.length > 0) {
+                content += '<div class="mt-2"><strong>Missing Elements:</strong><ul class="text-muted">';
+                step.missing_elements.forEach(m => content += `<li>${m}</li>`);
+                content += '</ul></div>';
+            }
+
+            if (step.creative_suggestions && step.creative_suggestions.length > 0) {
+                content += '<div class="mt-2"><strong>Creative Suggestions:</strong><ul class="text-info">';
+                step.creative_suggestions.forEach(c => content += `<li>${c}</li>`);
+                content += '</ul></div>';
+            }
+
+            if (step.visual_text_synergy) {
+                content += '<div class="mt-2"><strong>Visual-Text Synergy:</strong>';
+                if (Array.isArray(step.visual_text_synergy)) {
+                    content += '<ul>';
+                    step.visual_text_synergy.forEach(v => content += `<li>${v}</li>`);
+                    content += '</ul>';
+                } else {
+                    content += ` <p>${step.visual_text_synergy}</p>`;
+                }
+                content += '</div>';
+            }
+
+            if (step.recommendations && step.recommendations.length > 0) {
+                content += '<div class="mt-2"><strong>Recommendations:</strong><ul class="text-success">';
+                step.recommendations.forEach(r => content += `<li>${r}</li>`);
+                content += '</ul></div>';
+            }
+
+            if (step.error) {
+                content += `<div class="alert alert-danger mt-2"><i class="bi bi-exclamation-circle"></i> Error: ${step.error}</div>`;
+            }
+
+            return content || '<p class="text-muted mb-0">No issues found</p>';
+        }
+
+        function displayError(error) {
+            $('#resultsContainer').html(`
+                <div class="alert alert-danger">
+                    <h5><i class="bi bi-exclamation-triangle"></i> Error</h5>
+                    <p>${error.detail || error.message || 'An unexpected error occurred'}</p>
+                </div>
+            `);
+            $('#overallStatus').hide();
+        }
+    </script>
+</body>
+</html>
