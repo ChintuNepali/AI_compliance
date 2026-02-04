@@ -13,7 +13,7 @@ AdChecker analyzes ad copy and optional ad images for Google Ads compliance. It 
 
 ## Tools to install
 - Python 3.12+
-- A virtual environment tool (venv is fine)
+- uv (https://github.com/astral-sh/uv) - fast Python package and project manager
 - Project dependencies from pyproject.toml:
   - fastapi
   - google-generativeai
@@ -23,9 +23,36 @@ AdChecker analyzes ad copy and optional ad images for Google Ads compliance. It 
   - requests
   - uvicorn
 
+## Dependency management (uv)
+This project uses **uv** for dependency management. All dependencies are tracked in `pyproject.toml` and `uv.lock`.
+
+### Common commands:
+```bash
+# Sync dependencies (install from lockfile)
+uv sync
+
+# Add a new dependency
+uv add <package-name>
+
+# Add a dev dependency
+uv add --dev <package-name>
+
+# Run a command in the uv environment
+uv run python hybrid_checker.py
+uv run uvicorn backend:app --reload
+
+# Update dependencies
+uv lock --upgrade
+```
+
+### Important notes:
+- **Always use `uv add`** to add new packages, not `pip install`.
+- `uv sync` will create/update `.venv` automatically.
+- Do not mix pip and uv to avoid dependency conflicts.
+
 ## Setup steps
-1. Create a virtual environment and activate it.
-2. Install dependencies from pyproject.toml (pip install . is sufficient).
+1. Install uv if you haven't already: `pip install uv` or follow https://github.com/astral-sh/uv
+2. Sync dependencies: `uv sync`
 3. Create a .env file with GEMINI_API_KEY.
 4. Update inputs in these files if you want default data:
    - ad_copy.txt
