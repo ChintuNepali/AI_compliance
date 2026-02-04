@@ -14,6 +14,11 @@ load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL = "gemini-3-flash-preview"
 
+# --- TUNING ---
+GUIDELINE_MAX_CHUNK_CHARS = 1200
+GUIDELINE_MAX_EXCERPT_CHARS = 1200
+IMAGE_MAX_EDGE = 1024
+
 # Configure Gemini
 if not GEMINI_API_KEY:
     raise ValueError("GEMINI_API_KEY not found in .env file")
@@ -31,11 +36,73 @@ def read_text_file(filepath):
             return f.read().strip()
     except: return ""
 
+def chunk_guidelines(text, max_chars=GUIDELINE_MAX_CHUNK_CHARS):
+    if not text:
+        return []
+    paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
+    chunks = []
+    current = ""
+    for p in paragraphs:
+        candidate = f"{current}\n\n{p}".strip() if current else p
+        if len(candidate) <= max_chars:
+            current = candidate
+            continue
+        if current:
+            chunks.append(current)
+            current = ""
+        if len(p) <= max_chars:
+            current = p
+            continue
+        sentences = [s.strip() for s in p.replace("\n", " ").split(". ") if s.strip()]
+        temp = ""
+        for s in sentences:
+            candidate = f"{temp}. {s}".strip(". ") if temp else s
+            if len(candidate) <= max_chars:
+                temp = candidate
+            else:
+                if temp:
+                    chunks.append(temp.strip())
+                temp = s
+        if temp:
+            chunks.append(temp.strip())
+    if current:
+        chunks.append(current)
+    return chunks
+
+def guideline_excerpt(chunks, max_chars=GUIDELINE_MAX_EXCERPT_CHARS):
+    if not chunks:
+        return ""
+    excerpt = ""
+    for chunk in chunks:
+        candidate = f"{excerpt}\n\n{chunk}".strip() if excerpt else chunk
+        if len(candidate) <= max_chars:
+            excerpt = candidate
+        else:
+            break
+    return excerpt
+
+def normalize_image(image, max_edge=IMAGE_MAX_EDGE):
+    if image.mode in ("RGBA", "LA") or (image.mode == "P" and "transparency" in image.info):
+        background = Image.new("RGB", image.size, (255, 255, 255))
+        background.paste(image, mask=image.split()[-1])
+        image = background
+    elif image.mode != "RGB":
+        image = image.convert("RGB")
+
+    width, height = image.size
+    max_dim = max(width, height)
+    if max_dim > max_edge:
+        scale = max_edge / max_dim
+        new_size = (max(1, int(width * scale)), max(1, int(height * scale)))
+        image = image.resize(new_size, Image.LANCZOS)
+    return image
+
 def load_image(filepath):
     """Load image file if it exists"""
     try:
         if Path(filepath).exists():
-            return Image.open(filepath)
+            image = Image.open(filepath)
+            return normalize_image(image)
     except Exception as e:
         print(f"Warning: Could not load image {filepath}: {e}")
     return None
@@ -84,12 +151,15 @@ def run_image_analysis(image, ad_text, biz_info, guidelines):
     try:
         model = genai.GenerativeModel(GEMINI_MODEL)
         
+        chunks = chunk_guidelines(guidelines)
+        excerpt = guideline_excerpt(chunks)
+
         prompt = f"""
 Analyze this advertising image along with its text copy for Google Ads compliance.
 
 AD TEXT: {ad_text}
 BUSINESS INFO: {biz_info}
-COMPLIANCE GUIDELINES (key points): {guidelines[:2000]}
+    COMPLIANCE GUIDELINES (excerpt from chunked rules): {excerpt}
 
 Return ONLY a JSON object with:
 {{
@@ -104,6 +174,7 @@ Return ONLY a JSON object with:
         
         response = model.generate_content([prompt, image])
         result = parse_json_response(response.text)
+        result["guideline_chunk_count"] = len(chunks)
         print(json.dumps(result, indent=4))
         
         return result.get("compliance_status", "PASS")
@@ -119,8 +190,13 @@ def run_step_2(ad_text, biz_info, guidelines, image=None):
     
     try:
         model = genai.GenerativeModel(GEMINI_MODEL)
-        
-        prompt = f"""
+        chunks = chunk_guidelines(guidelines)
+        if not chunks:
+            chunks = [""]
+
+        chunk_results = []
+        for index, chunk in enumerate(chunks, start=1):
+            prompt = f"""
 Analyze this ad against Business Info and Compliance Guidelines.
 
 Return ONLY a JSON object:
@@ -131,15 +207,53 @@ Return ONLY a JSON object:
 }}
 
 BUSINESS INFO: {biz_info}
-GUIDELINES: {guidelines}
+GUIDELINES (chunk {index}/{len(chunks)}): {chunk}
 AD TEXT: {ad_text}
 """
-        
-        # Use multimodal if image provided, otherwise text-only
-        content = [prompt, image] if image else [prompt]
-        response = model.generate_content(content)
-        result = parse_json_response(response.text)
-        print(json.dumps(result, indent=4))
+            try:
+                content = [prompt, image] if image else [prompt]
+                response = model.generate_content(content)
+                result = parse_json_response(response.text)
+                result["chunk_index"] = index
+                chunk_results.append(result)
+            except Exception as chunk_error:
+                chunk_results.append({
+                    "chunk_index": index,
+                    "status": "ERROR",
+                    "issues": [],
+                    "suggestions": [],
+                    "error": str(chunk_error)
+                })
+
+        issues = []
+        suggestions = []
+        statuses = []
+        for result in chunk_results:
+            status = result.get("status")
+            if status:
+                statuses.append(status)
+            for issue in result.get("issues", []) or []:
+                if issue not in issues:
+                    issues.append(issue)
+            for suggestion in result.get("suggestions", []) or []:
+                if suggestion not in suggestions:
+                    suggestions.append(suggestion)
+
+        if "FAIL" in statuses:
+            overall_status = "FAIL"
+        elif "ERROR" in statuses:
+            overall_status = "ERROR"
+        else:
+            overall_status = "PASS"
+
+        aggregated = {
+            "status": overall_status,
+            "issues": issues,
+            "suggestions": suggestions,
+            "chunk_count": len(chunks),
+            "chunk_results": chunk_results
+        }
+        print(json.dumps(aggregated, indent=4))
         
     except Exception as e:
         print(f"Error in compliance check: {e}")
@@ -205,7 +319,7 @@ if __name__ == "__main__":
         if ad_image:
             image_status = run_image_analysis(ad_image, ad_copy, biz_info, rules)
             if image_status == "FAIL":
-                print("\n⚠️ Image compliance issues detected. Review image violations above.")
+                print("\n Image compliance issues detected. Review image violations above.")
         
         # Step 2: Compliance (with or without image)
         run_step_2(ad_copy, biz_info, rules, ad_image)
@@ -213,4 +327,4 @@ if __name__ == "__main__":
         # Step 3: Marketing recommendations (with or without image)
         run_step_3(ad_copy, biz_info, recs, ad_image)
     else:
-        print("\n❌ Stopping: Fix Hard Rule violations (Step 1) before running AI analysis.")
+        print("\n Stopping: Fix Hard Rule violations (Step 1) before running AI analysis.")
