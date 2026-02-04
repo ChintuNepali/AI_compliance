@@ -11,7 +11,10 @@ AdChecker analyzes ad copy and optional ad images for Google Ads compliance. It 
 5. Added image normalization to reduce resolution while preserving information.
 6. Built a simple demo UI and FastAPI endpoint to show results visually.
 
-## Tools to install
+## Tools to install ( we are using uv instead of pip in this project )
+To run this,
+you need to install uv
+then copy this project , then enter uv sync and then uv run backend.py ( the UI appears in localhost:8000)
 - Python 3.12+
 - uv (https://github.com/astral-sh/uv) - fast Python package and project manager
 - Project dependencies from pyproject.toml:
@@ -51,8 +54,8 @@ uv lock --upgrade
 - Do not mix pip and uv to avoid dependency conflicts.
 
 ## Setup steps
-1. Install uv if you haven't already: `pip install uv` or follow https://github.com/astral-sh/uv
-2. Sync dependencies: `uv sync`
+1. Create a virtual environment and activate it.
+2. Install dependencies from pyproject.toml (pip install . is sufficient).
 3. Create a .env file with GEMINI_API_KEY.
 4. Update inputs in these files if you want default data:
    - ad_copy.txt
